@@ -1,8 +1,8 @@
-mod commands;
 mod godette;
 
 use teloxide::prelude::*;
 
+use godette::commands;
 use godette::Godette;
 
 #[tokio::main]
@@ -15,6 +15,11 @@ async fn main() {
             dptree::entry()
                 .filter_command::<commands::Command>()
                 .endpoint(Godette::commands_dispatcher),
+        )
+        .branch(
+            dptree::entry()
+                .filter_command::<commands::AdminCommand>()
+                .endpoint(Godette::admin_dispatcher),
         )
         .branch(
             dptree::filter(|msg: Message| {

@@ -25,6 +25,18 @@ impl Godette {
         Ok(())
     }
 
+    pub async fn message_dispatcher(bot: Bot, msg: Message) -> ResponseResult<()> {
+        let text = msg
+            .text()
+            .unwrap_or(msg.caption().unwrap_or_default())
+            .to_string();
+        match text.to_lowercase().find("спасибо") {
+            Some(_id) => bot.send_message(msg.chat.id, "Не за что!").await?,
+            None => todo!(),
+        };
+        Ok(())
+    }
+
     async fn show_help(bot: Bot, msg: Message) -> ResponseResult<Message> {
         bot.send_message(msg.chat.id, Command::descriptions().to_string())
             .await

@@ -24,7 +24,7 @@ async fn main() {
                 .endpoint(Godette::admin_dispatcher),
         )
         // Replies
-        .branch(Message::filter_reply_to_message().endpoint(Godette::reply_dispatcher))
+        // .branch(Message::filter_reply_to_message().endpoint(Godette::reply_dispatcher))
         // Messages
         .branch(
             dptree::filter(|msg: Message| {

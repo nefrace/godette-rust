@@ -67,12 +67,7 @@ pub async fn unwarn(bot: Bot, msg: Message) -> ResponseResult<Message> {
         .await
 }
 
-pub async fn karma(
-    bot: &Bot,
-    msg: &Message,
-    reply: &Message,
-    change: i8,
-) -> ResponseResult<Message> {
+pub async fn karma(bot: &Bot, msg: &Message, reply: &Message, change: i8) -> ResponseResult<()> {
     let giver = msg.from().unwrap();
     let reciever = reply.from().unwrap();
     let change_text = match change {
@@ -88,5 +83,6 @@ pub async fn karma(
     );
     bot.send_message(msg.chat.id, text)
         .parse_mode(MarkdownV2)
-        .await
+        .await?;
+    Ok(())
 }

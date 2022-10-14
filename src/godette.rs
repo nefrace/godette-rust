@@ -1,4 +1,4 @@
-use teloxide::prelude::*;
+use teloxide::{prelude::*, repl};
 
 pub mod commands;
 mod handlers;
@@ -43,16 +43,45 @@ impl Godette {
     }
 
     pub async fn message_dispatcher(bot: Bot, msg: Message) -> ResponseResult<()> {
+        let thanks = vec!["спасибо", "спс", "благодар очка"];
         let text = msg
             .text()
             .unwrap_or(msg.caption().unwrap_or_default())
             .to_string();
-        match text.to_lowercase().find("спасибо") {
-            Some(_id) => {
-                bot.send_message(msg.chat.id, "Не за что!").await?;
+
+        for thank in thanks {
+            match text.to_lowercase().find(thank) {
+                Some(_id) => {
+                    bot.send_message(msg.chat.id, "Не за что!").await?;
+                }
+                None => (),
             }
-            None => (),
-        };
+        }
+        Ok(())
+    }
+
+    pub async fn reply_dispatcher(
+        bot: Bot,
+        msg: Message,
+        reply_to_message: Message,
+    ) -> ResponseResult<()> {
+        let thanks = vec!["спасибо", "спс", "благодар очка"];
+        let text = msg
+            .text()
+            .unwrap_or(msg.caption().unwrap_or_default())
+            .to_string();
+        println!("{:?}", msg);
+        println!("{:?}", bot);
+        println!("{:?}", reply_to_message);
+        for thank in thanks {
+            match text.to_lowercase().find(thank) {
+                Some(_id) => {
+                    handlers::karma(&bot, &msg, &reply_to_message, 1).await?;
+                    ()
+                }
+                None => (),
+            }
+        }
         Ok(())
     }
 }

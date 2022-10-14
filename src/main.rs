@@ -11,16 +11,21 @@ async fn main() {
 
     let bot = Godette::new();
     let handler = Update::filter_message()
+        // User commands
         .branch(
             dptree::entry()
                 .filter_command::<commands::Command>()
                 .endpoint(Godette::commands_dispatcher),
         )
+        // Admin commands
         .branch(
             dptree::entry()
                 .filter_command::<commands::AdminCommand>()
                 .endpoint(Godette::admin_dispatcher),
         )
+        // Replies
+        .branch(Message::filter_reply_to_message().endpoint(Godette::reply_dispatcher))
+        // Messages
         .branch(
             dptree::filter(|msg: Message| {
                 msg.from()

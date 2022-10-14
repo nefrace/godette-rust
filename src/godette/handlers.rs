@@ -66,3 +66,27 @@ pub async fn unwarn(bot: Bot, msg: Message) -> ResponseResult<Message> {
     bot.send_message(msg.chat.id, "Это разбан".to_string())
         .await
 }
+
+pub async fn karma(
+    bot: &Bot,
+    msg: &Message,
+    reply: &Message,
+    change: i8,
+) -> ResponseResult<Message> {
+    let giver = msg.from().unwrap();
+    let reciever = reply.from().unwrap();
+    let change_text = match change {
+        1 => "повысил",
+        -1 => "понизил",
+        _ => "изменил",
+    };
+    let text = format!(
+        "*{}* {} карму *{}*",
+        escape(&giver.first_name),
+        change_text,
+        escape(&reciever.first_name)
+    );
+    bot.send_message(msg.chat.id, text)
+        .parse_mode(MarkdownV2)
+        .await
+}

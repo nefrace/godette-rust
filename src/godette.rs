@@ -8,6 +8,19 @@ pub struct Godette {
     pub bot: Bot,
 }
 
+pub struct KarmaTrigger {
+    pub text: String,
+    pub value: i8,
+}
+impl KarmaTrigger {
+    pub fn new(text: &str, value: i8) -> KarmaTrigger {
+        KarmaTrigger {
+            text: String::from(text),
+            value,
+        }
+    }
+}
+
 impl Godette {
     pub fn new() -> Godette {
         Godette {
@@ -55,18 +68,27 @@ impl Godette {
     }
 
     pub async fn reply_dispatcher(bot: Bot, msg: Message, reply: Message) -> ResponseResult<()> {
-        let thanks = vec!["спасибо", "спс", "благодар очка"];
+        let triggers = vec![
+            KarmaTrigger::new("спс", 1),
+            KarmaTrigger::new("спасибо", 1),
+            KarmaTrigger::new("+", 1),
+            KarmaTrigger::new("благодарю", 1),
+            KarmaTrigger::new("пасиб", 1),
+            KarmaTrigger::new("-", -1),
+            KarmaTrigger::new("👍", 1),
+            KarmaTrigger::new("👎", -1),
+        ];
         println!("Working on reply");
         let text = msg
             .text()
             .unwrap_or(msg.caption().unwrap_or_default())
             .to_string();
         println!("{:?}", text);
-        for thank in thanks {
-            match text.to_lowercase().find(thank) {
+        for trigger in triggers {
+            match text.to_lowercase().find(&trigger.text) {
                 Some(_id) => {
                     println!("It's a thanks!");
-                    return handlers::karma(&bot, &msg, &reply, 1).await;
+                    return handlers::karma(&bot, &msg, &reply, trigger.value).await;
                 }
                 None => (),
             }

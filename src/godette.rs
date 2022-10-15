@@ -1,9 +1,15 @@
-use teloxide::prelude::*;
+use teloxide::{
+    prelude::*,
+    types::{InlineKeyboardButton, InlineKeyboardMarkup},
+};
 
 pub mod commands;
 mod handlers;
+mod utils;
 use commands::{AdminCommand, Command};
+use url::Url;
 
+use utils::get_text_or_empty;
 pub struct Godette {
     pub bot: Bot,
 }
@@ -57,12 +63,23 @@ impl Godette {
 
     pub async fn message_dispatcher(bot: Bot, msg: Message) -> ResponseResult<()> {
         // Checking if it's a reply
-        let message = msg.clone();
-        let reply = message.reply_to_message();
+        let reply = msg.reply_to_message();
         match reply {
-            Some(reply) => return Godette::reply_dispatcher(bot, msg, reply.to_owned()).await,
+            Some(reply) => {
+                Godette::reply_dispatcher(bot.clone(), msg.clone(), reply.to_owned()).await?
+            }
             None => (),
         };
+        let text = utils::get_text_or_empty(&msg).to_lowercase();
+        match text.find("оффтоп") {
+            Some(_) => {
+                bot.send_message(msg.chat.id, "Вот вам ссылка на оффтоп")
+                    .reply_to_message_id(msg.id)
+                    .reply_markup(Godette::make_offtop_keyboard())
+                    .await?;
+            }
+            None => (),
+        }
 
         Ok(())
     }
@@ -78,11 +95,7 @@ impl Godette {
             KarmaTrigger::new("👍", 1),
             KarmaTrigger::new("👎", -1),
         ];
-        println!("Working on reply");
-        let text = msg
-            .text()
-            .unwrap_or(msg.caption().unwrap_or_default())
-            .to_string();
+        let text = get_text_or_empty(&msg);
         println!("{:?}", text);
         for trigger in triggers {
             match text.to_lowercase().find(&trigger.text) {
@@ -94,5 +107,11 @@ impl Godette {
             }
         }
         Ok(())
+    }
+
+    fn make_offtop_keyboard() -> InlineKeyboardMarkup {
+        let link = Url::parse("https://t.me/Godot_Engine_Offtop").unwrap();
+        let button = InlineKeyboardButton::url("Godot Engine оффтоп чат".to_owned(), link);
+        return InlineKeyboardMarkup::new(vec![[button]]);
     }
 }

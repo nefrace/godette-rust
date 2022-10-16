@@ -5,35 +5,15 @@ use teloxide::prelude::*;
 use godette::commands;
 use godette::Godette;
 
+use dotenv::dotenv;
+
 #[tokio::main]
 async fn main() {
+    dotenv().ok();
     pretty_env_logger::init();
 
     let bot = Godette::new();
-    let handler = Update::filter_message()
-        // User commands
-        .branch(
-            dptree::entry()
-                .filter_command::<commands::Command>()
-                .endpoint(Godette::commands_dispatcher),
-        )
-        // Admin commands
-        .branch(
-            dptree::entry()
-                .filter_command::<commands::AdminCommand>()
-                .endpoint(Godette::admin_dispatcher),
-        )
-        // Replies
-        // .branch(Message::filter_reply_to_message().endpoint(Godette::reply_dispatcher))
-        // Messages
-        .branch(
-            dptree::filter(|msg: Message| {
-                msg.from()
-                    .map(|user| user.id == UserId(60441930))
-                    .unwrap_or_default()
-            })
-            .endpoint(Godette::message_dispatcher),
-        );
+    let handler = bot.create_handler();
     Dispatcher::builder(bot.bot, handler)
         .default_handler(|upd| async move {
             log::warn!("Unhandled update: {:?}", upd);

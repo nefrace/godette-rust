@@ -8,6 +8,8 @@ use teloxide::{
 
 use crate::commands::{AdminCommand, Command};
 
+use super::{utils, KarmaTrigger};
+
 pub async fn show_help(bot: Bot, msg: Message) -> ResponseResult<Message> {
     bot.send_message(msg.chat.id, Command::descriptions().to_string())
         .await
@@ -67,22 +69,48 @@ pub async fn unwarn(bot: Bot, msg: Message) -> ResponseResult<Message> {
         .await
 }
 
-pub async fn karma(bot: &Bot, msg: &Message, reply: &Message, change: i8) -> ResponseResult<()> {
-    let giver = msg.from().unwrap();
-    let reciever = reply.from().unwrap();
-    let change_text = match change {
-        1 => "повысил",
-        -1 => "понизил",
-        _ => "изменил",
-    };
-    let text = format!(
-        "*{}* {} карму *{}*",
-        escape(&giver.first_name),
-        change_text,
-        escape(&reciever.first_name)
-    );
-    bot.send_message(msg.chat.id, text)
-        .parse_mode(MarkdownV2)
+pub async fn karma(bot: &Bot, msg: &Message, reply: &Message, text: &String) -> ResponseResult<()> {
+    let triggers = vec![
+        KarmaTrigger::new("спс", 1),
+        KarmaTrigger::new("спасибо", 1),
+        KarmaTrigger::new("+", 1),
+        KarmaTrigger::new("благодарю", 1),
+        KarmaTrigger::new("пасиб", 1),
+        KarmaTrigger::new("-", -1),
+        KarmaTrigger::new("👍", 1),
+        KarmaTrigger::new("👎", -1),
+    ];
+    for trigger in triggers {
+        match text.to_lowercase().find(&trigger.text) {
+            Some(_id) => {
+                let giver = msg.from().unwrap();
+                let reciever = reply.from().unwrap();
+                let change_text = match trigger.value {
+                    1 => "повысил",
+                    -1 => "понизил",
+                    _ => "изменил",
+                };
+                let text = format!(
+                    "*{}* {} карму *{}*",
+                    escape(&giver.first_name),
+                    change_text,
+                    escape(&reciever.first_name)
+                );
+                bot.send_message(msg.chat.id, text)
+                    .parse_mode(MarkdownV2)
+                    .await?;
+                return Ok(());
+            }
+            None => (),
+        }
+    }
+    Ok(())
+}
+
+pub async fn offtop(bot: &Bot, msg: &Message) -> ResponseResult<()> {
+    bot.send_message(msg.chat.id, "Вот вам ссылка на оффтоп")
+        .reply_to_message_id(msg.id)
+        .reply_markup(utils::make_offtop_keyboard())
         .await?;
     Ok(())
 }

@@ -1,7 +1,9 @@
 use teloxide::prelude::*;
 
-use super::{handlers, utils, Godette, KarmaTrigger, Trigger};
+use super::{handlers, utils, Godette};
 use crate::commands::{AdminCommand, Command};
+use lazy_static::lazy_static;
+use regex::Regex;
 
 impl Godette {
     pub async fn commands_dispatcher(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
@@ -40,10 +42,25 @@ impl Godette {
             }
             None => (),
         };
-        let text = utils::get_text_or_empty(&msg).to_lowercase();
-        match text.find("оффтоп") {
+        let text = utils::get_text_or_empty(&msg);
+        match text.to_lowercase().find("оффтоп") {
             Some(_) => handlers::offtop(&bot, &msg).await?,
             None => (),
+        }
+
+        lazy_static! {
+            static ref DOC_RE: Regex =
+                Regex::new(r"(?i)док(ументац[а-я]+|[а-я])? ((п)?о )?(?P<topic>@?[\w\d]{1,32})")
+                    .unwrap();
+        }
+
+        if let Some(caps) = DOC_RE.captures(&text) {
+            match caps.name("topic") {
+                Some(topic) => {
+                    handlers::documentation(&bot, &msg, String::from(topic.as_str())).await?
+                }
+                None => (),
+            }
         }
 
         Ok(())
@@ -53,6 +70,19 @@ impl Godette {
         let text = utils::get_text_or_empty(&msg);
         handlers::karma(&bot, &msg, &reply, &text).await?;
 
+        Ok(())
+    }
+
+    pub async fn callback_dispatcher(bot: Bot, q: CallbackQuery) -> ResponseResult<()> {
+        if let Some(data) = q.data {
+            bot.answer_callback_query(q.id).await?;
+
+            if data == "no_thanks" {
+                if let Some(Message { id, chat, .. }) = q.message {
+                    bot.delete_message(chat.id, id).await?;
+                }
+            }
+        }
         Ok(())
     }
 }

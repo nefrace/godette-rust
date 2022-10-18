@@ -5,6 +5,7 @@ use teloxide::{
     utils::command::BotCommands,
     utils::markdown::{self, bold, escape, italic},
 };
+use url::Url;
 
 use crate::commands::{AdminCommand, Command};
 
@@ -111,6 +112,41 @@ pub async fn offtop(bot: &Bot, msg: &Message) -> ResponseResult<()> {
     bot.send_message(msg.chat.id, "Вот вам ссылка на оффтоп")
         .reply_to_message_id(msg.id)
         .reply_markup(utils::make_offtop_keyboard())
+        .await?;
+    Ok(())
+}
+
+pub async fn documentation(bot: &Bot, msg: &Message, topic: String) -> ResponseResult<()> {
+    let mut text = format!(
+        "Извините, по запросу \"{}\" ничего не найдено\\.",
+        escape(&topic)
+    );
+    let btn_text = format!("Поиск \"{}\"", topic);
+    let btn_url = Url::parse(&format!(
+        "https://docs.godotengine.org/ru/stable/search.html?q={}",
+        topic
+    ))
+    .unwrap();
+    let results = utils::request_docs(&topic).await;
+
+    if results.len() > 0 {
+        let links = results
+            .iter()
+            .take(10)
+            .map(|res| format!("\\- [{}]({})", escape(&res.title), res.path))
+            .collect::<Vec<String>>()
+            .join("\n");
+        text = format!(
+            "Вот что удалось мне найти в документации по запроу {}:\n\n{}",
+            bold(&escape(&topic)),
+            links
+        );
+    }
+
+    bot.send_message(msg.chat.id, text)
+        .parse_mode(MarkdownV2)
+        .reply_markup(utils::make_docs_keyboard(btn_text, btn_url))
+        .reply_to_message_id(msg.id)
         .await?;
     Ok(())
 }

@@ -130,12 +130,13 @@ pub async fn documentation(bot: &Bot, msg: &Message, topic: String) -> ResponseR
     let results = utils::request_docs(&topic).await;
 
     if results.len() > 0 {
-        let links = results
+        let mut links = results
             .iter()
             .take(10)
             .map(|res| format!("\\- [{}]({})", escape(&res.title), res.path))
-            .collect::<Vec<String>>()
-            .join("\n");
+            .collect::<Vec<String>>();
+        links[0] = bold(&italic(&links[0]));
+        let links = links.join("\n");
         text = format!(
             "Вот что удалось мне найти в документации по запроу {}:\n\n{}",
             bold(&escape(&topic)),

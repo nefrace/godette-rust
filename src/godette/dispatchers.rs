@@ -50,7 +50,7 @@ impl Godette {
 
         lazy_static! {
             static ref DOC_RE: Regex =
-                Regex::new(r"(?i)док(ументац[а-я]+|[а-я])? ((п)?о )?(?P<topic>@?[\w\d]{1,32})")
+                Regex::new(r"(?i)док(ументац[а-я]+|[а-я])? ((п)?о )?(?P<topic>@?[\w\d\s]{1,32})")
                     .unwrap();
         }
 

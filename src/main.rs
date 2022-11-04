@@ -6,7 +6,6 @@ use godette::commands;
 use godette::Godette;
 
 use dotenv::dotenv;
-
 #[tokio::main]
 async fn main() {
     dotenv().ok();

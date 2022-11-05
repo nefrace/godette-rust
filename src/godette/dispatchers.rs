@@ -1,4 +1,4 @@
-use teloxide::prelude::*;
+use teloxide::{prelude::*, types::ChatMemberKind};
 
 use super::{handlers, utils, Godette};
 use crate::commands::{AdminCommand, Command};
@@ -35,17 +35,12 @@ impl Godette {
 
     pub async fn message_dispatcher(bot: Bot, msg: Message) -> ResponseResult<()> {
         // Checking if it's a reply and send it to Reply dispatcher
-        let reply = msg.reply_to_message();
-        match reply {
-            Some(reply) => {
-                Godette::reply_dispatcher(bot.clone(), msg.clone(), reply.to_owned()).await?
-            }
-            None => (),
-        };
+        if let Some(reply) = msg.reply_to_message() {
+            Godette::reply_dispatcher(bot.clone(), msg.clone(), reply.to_owned()).await?;
+        }
         let text = utils::get_text_or_empty(&msg);
-        match text.to_lowercase().find("оффтоп") {
-            Some(_) => handlers::offtop(&bot, &msg).await?,
-            None => (),
+        if !text.to_lowercase().contains("оффтоп") {
+            handlers::offtop(&bot, &msg).await?;
         }
 
         lazy_static! {
@@ -55,11 +50,8 @@ impl Godette {
         }
 
         if let Some(caps) = DOC_RE.captures(&text) {
-            match caps.name("topic") {
-                Some(topic) => {
-                    handlers::documentation(&bot, &msg, String::from(topic.as_str())).await?
-                }
-                None => (),
+            if let Some(topic) = caps.name("topic") {
+                handlers::documentation(&bot, &msg, String::from(topic.as_str())).await?
             }
         }
 
@@ -83,6 +75,15 @@ impl Godette {
                 }
             }
         }
+        Ok(())
+    }
+
+    pub async fn chat_member(bot: Bot, member: ChatMemberUpdated) -> ResponseResult<()> {
+        if member.new_chat_member.kind == ChatMemberKind::Member {
+            bot.send_message(member.chat.id, member.from.first_name)
+                .await?;
+        }
+
         Ok(())
     }
 }

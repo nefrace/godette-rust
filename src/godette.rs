@@ -1,6 +1,10 @@
+use std::env;
+
+use diesel::{Connection, PgConnection};
 use teloxide::{dispatching::DpHandlerDescription, prelude::*, RequestError};
 
 pub mod commands;
+
 mod dispatchers;
 mod handlers;
 mod utils;
@@ -8,6 +12,7 @@ mod utils;
 pub struct Godette {
     pub bot: Bot,
     pub triggers: Vec<Trigger>,
+    db: PgConnection,
 }
 
 pub struct Trigger {
@@ -30,9 +35,12 @@ impl KarmaTrigger {
 
 impl Godette {
     pub fn new() -> Godette {
+        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set");
         Godette {
             bot: Bot::from_env(),
             triggers: vec![],
+            db: PgConnection::establish(&database_url)
+                .unwrap_or_else(|_| panic!("Error connecting to {}", database_url)),
         }
     }
 
@@ -40,6 +48,7 @@ impl Godette {
         &self,
     ) -> Handler<'static, DependencyMap, Result<(), RequestError>, DpHandlerDescription> {
         dptree::entry()
+            .branch(Update::filter_chat_member().endpoint(Godette::chat_member))
             .branch(Update::filter_callback_query().endpoint(Godette::callback_dispatcher))
             .branch(
                 Update::filter_message()
